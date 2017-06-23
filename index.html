@@ -2,6 +2,10 @@
 <html>
   <head>
     <meta charset="utf-8">
+    <meta name="google-signin-client_id" content="164368898732-b20ctqo9r6j3is7l56ntbvhd04lj5eqi.apps.googleusercontent.com">
+    <meta name="google-signin-cookiepolicy" content="single_host_origin">
+    <meta name="google-signin-scope" content="profile email">
+
     <title></title>
     <style media="screen">
     body {
@@ -37,7 +41,7 @@
       width: 100%;
       background-color: gray;
       position: fixed;
-      bottom: 0;
+      bottom: -20px;
       right :0;
       left: 0;
       padding: 20px;
@@ -46,22 +50,17 @@
 
     </style>
 
-    <script src="https://cdn.firebase.com/js/client/2.2.1/firebase.js"></script>
+    <!-- <script src="https://cdn.firebase.com/js/client/2.2.1/firebase.js"></script> -->
+    <script src="https://www.gstatic.com/firebasejs/3.6.6/firebase.js"></script>
 
   </head>
   <body>
+    <h4>Sign in to save data</h4>
 
-    <form id="sign-in"><h4>Sign-In</h4>
-      <input type="text" id="username" value="" placeholder="email">
-      <input type="password" id="password" value="" placeholder="password">
-      <button type="submit" id='signin' class ='button'>Sign In</button>
-    </form>
+    <div class="g-signin2" data-onsuccess="onSignIn" data-theme="dark"></div>
 
     <h4>Upload new data</h4>
     <input type="file" id="upload" value="">
-
-    <button type="button" name="button" class ='view-button'>View</button>
-
 
 
     <form id="view-form" >  <h4>Search and View Database</h4>
@@ -144,6 +143,16 @@
   </body>
 
 </html>
+<!-- Insert this line above script imports  -->
+<script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
+
+<!-- normal script imports etc  -->
+<!-- <script src="scripts/jquery.min.js"></script>
+<script src="scripts/vendor.js"></script>     -->
+
+<!-- Insert this line after script imports -->
+<script>if (window.module) module = window.module;</script>
+<script src="https://apis.google.com/js/platform.js" async defer></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 <script type="text/javascript" src='scripts/pgrnupload.js'></script>
 <script type="text/javascript" src='scripts/vendor/papaparse.min.js'></script>
@@ -173,44 +182,77 @@ var config = {
 
 var input = document.querySelector("#upload");
 input.addEventListener("change", handleFiles, false);
-var view= document.querySelector('.view-button')
-view.addEventListener("click", maketable);
 var reader = new FileReader();
 $("#save-form").submit(formsaved);
-$("#sign-in").submit(signin);
 $("#view-form").submit(viewfb);
 
 
 
-var ref = new Firebase("https://pgrnqualtricsdate.firebaseio.com");
-var userresponse = ref.child('responses');
+// var ref = new Firebase("https://pgrnqualtricsdate.firebaseio.com");
 
-function signin() {
-  event.preventDefault()
-  ref.authWithPassword({
-    email    : $("#username").val(),
-    password : $("#password").val()
-  }, function(error, authData) {
-    if (error) {
-      console.log("Login Failed!", error);
-    } else {
-      console.log("Authenticated successfully with payload:", authData);
-    }
+var config = {
+  apiKey: "AIzaSyBGP8ITq03bYZWVUjMtC2tbtG1_vKjmBRs",
+  authDomain: "pgrnqualtricsdate.firebaseapp.com",
+  databaseURL: "https://pgrnqualtricsdate.firebaseio.com",
+  projectId: "pgrnqualtricsdate",
+  storageBucket: "pgrnqualtricsdate.appspot.com",
+  messagingSenderId: "164368898732"
+};
+
+firebase.initializeApp(config);
+var userresponse = firebase.database().ref('responses');
+var provider = new firebase.auth.GoogleAuthProvider();
+
+
+function writeUserData(userId, name, email) {
+  firebase.database().ref('users/' + userId).update({
+    username: name,
+    email: email
   });
-  $("#sign-in").addClass('hide')
 }
 
-// ref.changePassword({
-//   email       : "meganrm@gmail.com",
-//   oldPassword : "5fHXJQ2JKjxTg36c",
-//   newPassword : ""
-// }, function(error) {
-//   if (error === null) {
-//     console.log("Password changed successfully");
-//   } else {
-//     console.log("Error changing password:", error);
-//   }
-// });
+
+  function onSignIn(googleUser) {
+    console.log('Google Auth Response', googleUser);
+    // We need to register an Observer on Firebase Auth to make sure auth is initialized.
+    var unsubscribe = firebase.auth().onAuthStateChanged(function(firebaseUser) {
+      unsubscribe();
+      // Check if we are already signed-in Firebase with the correct user.
+      if (!isUserEqual(googleUser, firebaseUser)) {
+        // Build Firebase credential with the Google ID token.
+        var credential = firebase.auth.GoogleAuthProvider.credential(
+            googleUser.getAuthResponse().id_token);
+        // Sign in with credential from the Google user.
+        firebase.auth().signInWithCredential(credential).catch(function(error) {
+          // Handle Errors here.
+          var errorCode = error.code;
+          var errorMessage = error.message;
+          // The email of the user's account used.
+          var email = error.email;
+          // The firebase.auth.AuthCredential type that was used.
+          var credential = error.credential;
+          // ...
+        });
+      } else {
+        console.log('User already signed-in Firebase.');
+      }
+    });
+  }
+
+
+function isUserEqual(googleUser, firebaseUser) {
+  if (firebaseUser) {
+    var providerData = firebaseUser.providerData;
+    for (var i = 0; i < providerData.length; i++) {
+      if (providerData[i].providerId === firebase.auth.GoogleAuthProvider.PROVIDER_ID &&
+          providerData[i].uid === googleUser.getBasicProfile().getId()) {
+        // We don't need to reauth the Firebase connection.
+        return true;
+      }
+    }
+  }
+  return false;
+}
 
 function confirmBackspaceNavigations () {
     // http://stackoverflow.com/a/22949859/2407309
@@ -243,11 +285,7 @@ function handleFiles(event) {
         maketable(results.data)
         console.log(results);
     }})
-    // window.URL.createObjectURL(input.files[0]);
-    // var script = document.createElement('script')
-    // script.setAttribute('src', window.URL.createObjectURL(input.files[0]))
-    // var body = document.querySelector("body");
-    // body.appendChild(script)
+
   }
 }
 
@@ -370,44 +408,6 @@ function viewfb(){
 
   }
 }
-    // var li = newTagText('li', messagelist)
-    // var post = newTagText('div', li);
-    // post.classList.add('post');
-    // var p = newTagText('p', post, results['messageBody'])
-    // p.classList.add('message')
-    // var name = newTagText('span', post, results['username'])
-    // name.classList.add('username')
-    // var createdAt = new Date(results['createdAt']);
-    // var date =newTagText('span', post, strftime('%a %l:%M %P', createdAt));
-    // date.classList.add('timestamp')
-    // window.scroll(0,document.body.scrollHeight);
-
-
-      //   }
-      //
-      // }
-//     console.log(results);
-
-
-// userresponse.once("value", function(snapshot) {
-//   // The callback function will get called twice, once for "fred" and once for "barney"
-//   snapshot.forEach(function(childSnapshot) {
-//     // key will be "fred" the first time and "barney" the second time
-//     var key = childSnapshot.key();
-//
-//     //use below for signal batch update
-//     // var person= userresponse.child(key)
-//     //
-//     // var firstname= childSnapshot.child('firstname').val()
-//     // var lastname= childSnapshot.child('lastname').val()
-//     // var fullname = lastname+', '+firstname
-//     //   person.update({
-//     //     "statement": 'empty'
-//     //   })
-//     var childData = childSnapshot.val();
-//     fromfirebase.push(childData)
-//   });
-// });
 
 var approvedfb={fromfirebase}
 var fromfirebase=[]
@@ -416,7 +416,7 @@ userresponse.once("value", function(snapshot) {
   // The callback function will get called twice, once for "fred" and once for "barney"
   snapshot.forEach(function(childSnapshot) {
     // key will be "fred" the first time and "barney" the second time
-    var key = childSnapshot.key();
+    var key = childSnapshot.key;
     // childData will be the actual contents of the child
     var childData = childSnapshot.val();
 
