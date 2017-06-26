@@ -59,13 +59,20 @@
 
     <div class="g-signin2" data-onsuccess="onSignIn" data-theme="dark"></div>
 
-    <h4>Upload new data</h4>
+    <h4>Upload new data to the database</h4>
     <input type="file" id="upload" value="">
 
 
     <form id="view-form" >  <h4>Search and View Database</h4>
       <p>
         To see a subset of the data chose a column title and enter search text. If search text is blank, clicking "View Firebase" will show the whole database.
+      </p>
+      <p>
+        To search for missing data, choose a dropdown category and type the word "empty" into the search box.
+      </p>
+      <p>
+        The three status options are 'approved', 'hold', and 'delete'. Upon saving, 'approved' members will be live on the site,
+        'hold' members will be saved to the database but not viewable on the site, and 'delete' will not save the entry at all. 
       </p>
       <select id="myselect">
 
