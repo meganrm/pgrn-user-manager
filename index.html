@@ -78,9 +78,10 @@
     <form id="save-form" >
       <button type="submit" id="save">Save</button>
       <input type="text" id='col-to-edit' name="columns-to-edit" value="">
+      <span class="hidden" id="response"></span>
     </form>
     <table>
-      <tbody id='for-approval'>
+      <thead>
         <tr>
           <td class = 'status'>
             Approved?
@@ -133,8 +134,10 @@
           <td>
             resources
           </td>
-
         </tr>
+      </thead>
+      <tbody id='for-approval'>
+
 
       </tbody>
     </table>
@@ -289,7 +292,7 @@ function handleFiles(event) {
   }
 }
 
-var columns = ["status","firstname","lastname", 'fullname', "email","phone", "address", "state", "country", "title", "statement", "intitution",'display_intitution', "other", "dieases",  "expertise", "resources"]
+var columns = ["status", "firstname", "lastname", 'fullname', "email", "phone", "address", "state", "country", "title", "statement", "intitution",'display_intitution', "other", "dieases",  "expertise", "resources"]
 
 var dropdown= $("#myselect")
 for (var i = 0; i < columns.length; i++) {
@@ -319,10 +322,10 @@ var exist=false
 
 function formsaved(event){
   event.preventDefault();
+  $('#response').text('');
   rows= $('tr');
-
   for (var i = 1; i < rows.length; i++) {
-    cells= rows[i].children;
+    cells = rows[i].children;
     var name= $(cells[2]).text().trim()+$(cells[1]).text().trim();
     if (!name){
       continue
@@ -334,16 +337,17 @@ function formsaved(event){
     id = id.split(' ').join('');
     id = id.toLowerCase()
     var person= userresponse.child(id)
-    console.log(id);
     person.once("value", function(snapshot){
       exist=snapshot.exists()
     })
-
+    console.log(person);
     indexes = $('#col-to-edit').val()
     indexes = indexes.split(',')
     if (indexes[0]==''){
         indexes=countcolumns()
     }
+    newdata = {}
+
     for (var k = 0; k < indexes.length; k++) {
            var colnumber=parseInt(indexes[k])
            var colname= columns[colnumber]
@@ -362,15 +366,16 @@ function formsaved(event){
                  newdata2['text']=textlist[j]
                }
              }
-             console.log(newdata2);
            }
            var newtext = $(cells[colnumber]).text().trim()
-           newdata = {}
            newdata[colname]=newtext
-           person.update(newdata, onComplete)
-           }
-
       }
+      if (newdata.status !== 'delete') {
+         person.update(newdata, onComplete)
+      } else if ($(cells[0]).hasClass('fromfirebase')) {
+        person.remove()
+      }
+    }
  }
 
 
@@ -378,25 +383,31 @@ function formsaved(event){
 var indexes
 
 function updateselect(person, cells){
-
-
 }
 
 function viewfb(){
   event.preventDefault()
+  $('#response').text('');
   $('.emptyrow').remove()
+  $('#for-approval tr').remove()
   $('.fromfirebase').remove()
   var toview=[];
 
   if ($('#search-for').val()){
     var lookupkey = $( "#myselect option:selected" ).text();
+    if ($('#search-for').val() === 'empty' | $('#search-for').val() === 'Empty') {
+      for (var i = 0; i < fromfirebase.length; i++) {
+        if (fromfirebase[i][lookupkey].length === 0 ){
+          toview.push(fromfirebase[i])
+        }
+      }
+    }
     for (var i = 0; i < fromfirebase.length; i++) {
-      if (fromfirebase[i][lookupkey]==$('#search-for').val()){
-
+      if (fromfirebase[i][lookupkey].toLowerCase()==$('#search-for').val().toLowerCase()){
         toview.push(fromfirebase[i])
       }
+    }
   }
-}
   else{
     toview=fromfirebase
   }
@@ -429,9 +440,10 @@ userresponse.once("value", function(snapshot) {
 
 var onComplete = function(error) {
   if (error) {
-    console.log('Synchronization failed');
+    $('#response').text('Synchronization failed: ', error);
+    console.log('Synchronization failed' );
   } else {
-    console.log('Synchronization succeeded');
+    $('#response').text('Synchronization succeeded');
   }
 };
 

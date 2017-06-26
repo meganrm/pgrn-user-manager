@@ -1,0 +1,41 @@
+{
+  "name": "pgrn-user-manager",
+  "version": "1.0.0",
+  "description": "For uploading and editing pgrn members",
+  "main": "main.js",
+  "dependencies": {
+    "firebase": "^4.1.1",
+    "express": "^4.15.3"
+  },
+  "devDependencies": {
+    "electron": "^1.6.10",
+    "electron-packager": "^8.7.1",
+    "express": "^4.15.3",
+    "http": "0.0.0",
+    "path": "^0.12.7"
+  },
+  "build": {
+    "appId": "pgrn-user-manager.app",
+    "mac": {
+      "category": "your.app.category.type"
+    },
+    "win": {
+      "target": "NSIS"
+    }
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "pack": "build --dir",
+    "dist": "build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/meganrm/pgrn-user-manager.git"
+  },
+  "author": "Megan Riel-Mehan",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/meganrm/pgrn-user-manager/issues"
+  },
+  "homepage": "https://github.com/meganrm/pgrn-user-manager#readme"
+}

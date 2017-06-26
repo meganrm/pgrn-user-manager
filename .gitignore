@@ -1,0 +1,6 @@
+dist
+build
+node_modules
+pgrn-user-manager-darwin-x64
+pgrn-user-manager-win32-x64
+pgrn-user-manager-win32-ia32
